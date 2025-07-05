@@ -1,13 +1,16 @@
 package com.svalero.memazo.activity;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.svalero.memazo.api.ApiClient;
 import com.svalero.memazo.api.UserApiInterface;
 import com.svalero.memazo.databinding.ActivityAuthBinding;
+import com.svalero.memazo.domain.LoginRequest;
 import com.svalero.memazo.domain.User;
 
 import java.util.Calendar;
@@ -20,6 +23,7 @@ public class AuthActivity extends AppCompatActivity {
 
     // Declara la variable para el View Binding
     private ActivityAuthBinding binding;
+    private boolean isLoginMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,11 +34,53 @@ public class AuthActivity extends AppCompatActivity {
 
         // Configura el listener para el botón de registro
         binding.btnRegister.setOnClickListener(v -> validateAndRegister());
+        binding.btnLogin.setOnClickListener(v -> validateAndLogin());
+        binding.tvToggleMode.setOnClickListener(v -> toggleMode());
 
         // Configura el selector de fecha
         setupDatePicker();
     }
 
+    /**
+     * Cambia el modo de la interfaz entre login y registro.
+     */
+    private void toggleMode() {
+        // Invierte el estado booleano
+        isLoginMode = !isLoginMode;
+
+        if (isLoginMode) {
+            // ESTADO: LOGIN
+            // Ocultamos todo lo relacionado con el registro
+            binding.tilName.setVisibility(View.GONE);
+            binding.tilBirthDate.setVisibility(View.GONE);
+            binding.tilAvatar.setVisibility(View.GONE);
+            binding.tilPhone.setVisibility(View.GONE);
+            binding.tvSexLabel.setVisibility(View.GONE);
+            binding.rgSex.setVisibility(View.GONE);
+
+            // Ajustamos los botones y textos
+            binding.btnRegister.setVisibility(View.GONE);
+            binding.btnLogin.setVisibility(View.VISIBLE);
+            binding.tvTitle.setText("Iniciar Sesión");
+            binding.tvToggleMode.setText("¿No tienes cuenta? Regístrate");
+
+        } else {
+            // ESTADO: REGISTRO
+            // Mostramos todo lo relacionado con el registro
+            binding.tilName.setVisibility(View.VISIBLE);
+            binding.tilBirthDate.setVisibility(View.VISIBLE);
+            binding.tilAvatar.setVisibility(View.VISIBLE);
+            binding.tilPhone.setVisibility(View.VISIBLE);
+            binding.tvSexLabel.setVisibility(View.VISIBLE);
+            binding.rgSex.setVisibility(View.VISIBLE);
+
+            // Ajustamos los botones y textos
+            binding.btnRegister.setVisibility(View.VISIBLE);
+            binding.btnLogin.setVisibility(View.GONE);
+            binding.tvTitle.setText("Crear Cuenta");
+            binding.tvToggleMode.setText("¿Ya tienes cuenta? Inicia Sesión");
+        }
+    }
     /**
      * Valida los datos del formulario y, si son correctos, inicia el registro vía API.
      */
@@ -89,6 +135,39 @@ public class AuthActivity extends AppCompatActivity {
         });
     }
 
+    private void validateAndLogin() {
+        String email = binding.etEmail.getText().toString().trim();
+        String password = binding.etPassword.getText().toString().trim();
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Por favor, rellena todos los campos obligatorios", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Creamos el objeto para la peticion de login
+        LoginRequest loginRequest = new LoginRequest(email, password);
+
+        // Obtenemos la API y preparamos la peticion
+        UserApiInterface api = ApiClient.getRetrofitService(UserApiInterface.class);
+        Call<User> call = api.login(loginRequest);
+
+        call.enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful()) {
+                    //Si es correcto el login pasamos a la otra pantalla
+                    navigateToFeed();
+                } else {
+                    Toast.makeText(AuthActivity.this, "Email o contraseña incorrectos", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                Toast.makeText(AuthActivity.this, "Fallo de conexión: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+
     private void setupDatePicker() {
         binding.etBirthDate.setOnClickListener(v -> {
             final Calendar calendar = Calendar.getInstance();
@@ -116,4 +195,11 @@ public class AuthActivity extends AppCompatActivity {
         // Evita que se abra el teclado al pulsar el campo
         binding.etBirthDate.setFocusable(false);
     }
-}
+
+    private void navigateToFeed() {
+        Toast.makeText(this, "Login correcto", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, FeedActivity.class);
+        startActivity(intent);
+        finish();
+        }
+    }
