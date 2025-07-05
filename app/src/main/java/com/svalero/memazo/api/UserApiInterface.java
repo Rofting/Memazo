@@ -1,5 +1,6 @@
 package com.svalero.memazo.api;
 
+import com.svalero.memazo.domain.LoginRequest;
 import com.svalero.memazo.domain.User;
 
 import java.util.List;
@@ -19,6 +20,9 @@ public interface UserApiInterface {
 
     @POST("users")
     Call<User> addUser(@Body User user);
+
+    @POST("users/login")
+    Call<User> login(@Body LoginRequest loginRequest);
 
     @PUT("users/{id}")
     Call<User> modifyUser(@Path("id") long id, @Body User user);
