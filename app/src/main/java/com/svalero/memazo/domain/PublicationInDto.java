@@ -1,27 +1,31 @@
 package com.svalero.memazo.domain;
 
-public class Publication {
+public class PublicationInDto {
 
-    private long id;
+    private Long userId;
     private String content;
     private String imageUrl;
     private String typeContent;
     private String privacy;
-    private String publicationDate;
-    private String userName;
-    private double latitude;
-    private double longitude;
+    private Double latitude;
+    private Double longitude;
 
-    public Publication() {
+    public PublicationInDto(Long userId, String content, String imageUrl, String typeContent, String privacy, Double latitude, Double longitude) {
+        this.userId = userId;
+        this.content = content;
+        this.imageUrl = imageUrl;
+        this.typeContent = typeContent;
+        this.privacy = privacy;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
-
-    public long getId() {
-        return id;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getContent() {
@@ -56,35 +60,19 @@ public class Publication {
         this.privacy = privacy;
     }
 
-    public String getPublicationDate() {
-        return publicationDate;
-    }
-
-    public void setPublicationDate(String publicationDate) {
-        this.publicationDate = publicationDate;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public double getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public double getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 }
