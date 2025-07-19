@@ -2,9 +2,16 @@ package com.svalero.memazo.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.svalero.memazo.R;
 import com.svalero.memazo.adapter.PublicationAdapter;
 import com.svalero.memazo.contract.FeedContract;
 import com.svalero.memazo.databinding.ActivityFeedBinding;
@@ -26,34 +33,67 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
         binding = ActivityFeedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // La vista crea su Presenter
+        ViewCompat.setOnApplyWindowInsetsListener(binding.mainLayout, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
+        setSupportActionBar(binding.toolbarFeed);
+
+        getSupportActionBar().setTitle("Memazo");
+
         presenter = new FeedPresenter(this);
 
-        // Inicializamos el Adapter con una lista vacía
         publicationAdapter = new PublicationAdapter(new ArrayList<>());
-
-        // Configuramos el RecyclerView
         binding.rvPublications.setLayoutManager(new LinearLayoutManager(this));
         binding.rvPublications.setAdapter(publicationAdapter);
-
-        // Le decimos al Presenter que empiece a cargar las publicaciones
-        presenter.loadPublications();
 
         binding.fabAddPublication.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreatePublicationActivity.class);
             startActivity(intent);
         });
+
+        binding.swipeRefreshLayout.setOnRefreshListener(() -> {
+            presenter.loadPublications();
+        });
+    }
+
+    // Metodo para que se actualice la lista de publicaciones
+    @Override
+    protected void onResume() {
+        super.onResume();
+        presenter.loadPublications();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.feed_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_view_map) {
+            // Si se pulsa el ítem del mapa, abrimos la MapActivity
+            Intent intent = new Intent(this, MapActivity.class);
+            startActivity(intent);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void showPublications(List<Publication> publications) {
-        // El adapter recibe la nueva lista y notifica al RecyclerView
         publicationAdapter.setPublications(publications);
         publicationAdapter.notifyDataSetChanged();
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
     public void showError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 }
