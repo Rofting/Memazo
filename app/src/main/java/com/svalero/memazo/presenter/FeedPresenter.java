@@ -18,20 +18,16 @@ public class FeedPresenter implements FeedContract.Presenter, FeedContract.Model
 
     @Override
     public void loadPublications() {
-        // Le pide al modelo que cargue los datos y se pone a la escucha del resultado
         model.loadPublications(this);
     }
 
-    // Callbacks del Model
     @Override
     public void onSuccess(List<Publication> publications) {
-        // Cuando el modelo dice que todo fue bien, le pasa los datos a la vista
         view.showPublications(publications);
     }
 
     @Override
     public void onError(String message) {
-        // Cuando el modelo dice que hubo un error, se lo comunica a la vista
         view.showError(message);
     }
 }

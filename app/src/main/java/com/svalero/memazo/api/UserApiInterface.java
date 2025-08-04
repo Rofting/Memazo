@@ -1,6 +1,7 @@
 package com.svalero.memazo.api;
 
 import com.svalero.memazo.domain.LoginRequest;
+import com.svalero.memazo.domain.Publication;
 import com.svalero.memazo.domain.User;
 
 import java.util.List;
@@ -29,4 +30,11 @@ public interface UserApiInterface {
 
     @DELETE("users/{id}")
     Call<Void> deleteUser(@Path("id") long id);
+
+    @GET("users/{id}")
+    Call<User> getUserById(@Path("id") long id);
+
+    @GET("users/{id}/publications")
+    Call<List<Publication>> getUserPublications(@Path("id") long id);
+
 }

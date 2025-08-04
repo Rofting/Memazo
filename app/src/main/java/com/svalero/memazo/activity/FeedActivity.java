@@ -45,7 +45,7 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
 
         presenter = new FeedPresenter(this);
 
-        publicationAdapter = new PublicationAdapter(new ArrayList<>());
+        publicationAdapter = new PublicationAdapter(this, new ArrayList<>());
         binding.rvPublications.setLayoutManager(new LinearLayoutManager(this));
         binding.rvPublications.setAdapter(publicationAdapter);
 
@@ -59,7 +59,6 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
         });
     }
 
-    // Metodo para que se actualice la lista de publicaciones
     @Override
     protected void onResume() {
         super.onResume();
@@ -77,6 +76,12 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
         if (item.getItemId() == R.id.action_view_map) {
             // Si se pulsa el ítem del mapa, abrimos la MapActivity
             Intent intent = new Intent(this, MapActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_profile) {
+            // Si se pulsa el ítem del perfil, abrimos la ProfileActivity
+            Intent intent = new Intent(this, ProfileActivity.class);
             startActivity(intent);
             return true;
         }
