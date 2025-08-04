@@ -7,21 +7,23 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.svalero.memazo.R;
 import com.svalero.memazo.db.AppDatabase;
 import com.svalero.memazo.domain.FavoritePublication;
-import com.svalero.memazo.domain.Publication; // Asegúrate que este es el DTO de salida
+import com.svalero.memazo.domain.Publication;
+
 import java.util.List;
 
-public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.PublicationViewHolder> {
-
+public class FavoritePublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.PublicationViewHolder> {
     private Context context;
     private List<Publication> publications;
 
-    public PublicationAdapter(Context context, List<Publication> publications) {
+    public FavoritePublicationAdapter(Context context, List<Publication> publications) {
         this.context = context;
         this.publications = publications;
     }
@@ -32,13 +34,13 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     @NonNull
     @Override
-    public PublicationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public PublicationAdapter.PublicationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_publication, parent, false);
-        return new PublicationViewHolder(view);
+        return new PublicationAdapter.PublicationViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull PublicationViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull PublicationAdapter.PublicationViewHolder holder, int position) {
 
         Publication publication = publications.get(position);
 
@@ -95,3 +97,4 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         }
     }
 }
+

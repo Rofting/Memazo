@@ -8,19 +8,15 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 
 public interface PublicationApiInterface {
-
-    /**
-     * Obtiene una lista de todas las publicaciones.
-     */
     @GET("publications")
-    Call<List<Publication>> getPublications(); // Devuelve una lista de la clase 'Publication'
+    Call<List<Publication>> getPublications();
 
-    /**
-     * Envía los datos para crear una nueva publicación.
-     * @param publicationDto El objeto DTO con los datos de la nueva publicación.
-     */
     @POST("publications")
-    Call<Publication> addPublication(@Body PublicationInDto publicationDto); // Envía un 'PublicationInDto'
+    Call<Publication> addPublication(@Body PublicationInDto publicationDto);
+
+    @GET("users/{id}/publications")
+    Call<List<Publication>> getUserPublications(@Path("id") long id);
 }
