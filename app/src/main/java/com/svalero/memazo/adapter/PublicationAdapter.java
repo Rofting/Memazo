@@ -1,6 +1,8 @@
 package com.svalero.memazo.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +15,7 @@ import com.bumptech.glide.Glide;
 import com.svalero.memazo.R;
 import com.svalero.memazo.db.AppDatabase;
 import com.svalero.memazo.domain.FavoritePublication;
-import com.svalero.memazo.domain.Publication; // Asegúrate que este es el DTO de salida
+import com.svalero.memazo.domain.Publication;
 import java.util.List;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.PublicationViewHolder> {
@@ -39,39 +41,56 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull PublicationViewHolder holder, int position) {
-
         Publication publication = publications.get(position);
 
         holder.tvAuthor.setText(publication.getUserName());
         holder.tvDescription.setText(publication.getContent());
+
         Glide.with(holder.itemView.getContext())
                 .load(publication.getImageUrl())
                 .fallback(R.drawable.ic_image_not_found)
                 .error(R.drawable.ic_image_not_found)
                 .into(holder.ivImage);
 
-        AppDatabase db = AppDatabase.getInstance(context);
+        // Comprobar el estado inicial en segundo plano
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(context);
+            FavoritePublication favorite = db.favoritePublicationDao().getById(publication.getId());
 
-        // Comprobamos si el item ya está en favoritos
-        FavoritePublication favorite = db.favoritePublicationDao().getById(publication.getId());
-        holder.cbFavorite.setChecked(favorite != null);
+            // Volvemos al hilo principal para actualizar la interfaz
+            new Handler(Looper.getMainLooper()).post(() -> {
+                // Desactivamos el listener temporalmente para evitar que se dispare solo
+                holder.cbFavorite.setOnCheckedChangeListener(null);
+                holder.cbFavorite.setChecked(favorite != null);
+                // Lo volvemos a activar con la lógica de guardar/borrar
+                setFavoriteChangeListener(holder, publication);
+            });
+        });
+    }
 
-        // Asignamos el listener al checkbox
+    /**
+     * Configura el listener del CheckBox para guardar o borrar un favorito.
+     */
+    private void setFavoriteChangeListener(PublicationViewHolder holder, Publication publication) {
         holder.cbFavorite.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                // Si el checkbox está marcado, añadimos la publicación a la base de datos
-                FavoritePublication newFavorite = new FavoritePublication(); // Nombre de variable corregido
-                newFavorite.setId(publication.getId());
-                newFavorite.setUserName(publication.getUserName());
-                newFavorite.setContent(publication.getContent());
-                newFavorite.setImageUrl(publication.getImageUrl());
-                db.favoritePublicationDao().insert(newFavorite);
-            } else {
-                // Si el checkbox no está marcado, eliminamos la publicación de la base de datos
-                FavoritePublication favoriteToDelete = new FavoritePublication();
-                favoriteToDelete.setId(publication.getId());
-                db.favoritePublicationDao().delete(favoriteToDelete);
-            }
+            // Tarea 2: Guardar o borrar en segundo plano
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(context);
+                if (isChecked) {
+                    // Si se marca, lo guardamos
+                    FavoritePublication newFavorite = new FavoritePublication();
+                    newFavorite.setId(publication.getId());
+                    newFavorite.setUserName(publication.getUserName());
+                    newFavorite.setContent(publication.getContent());
+                    newFavorite.setImageUrl(publication.getImageUrl());
+                    db.favoritePublicationDao().insert(newFavorite);
+                } else {
+                    // Si se desmarca, lo borramos
+                    FavoritePublication favoriteToDelete = new FavoritePublication();
+                    favoriteToDelete.setId(publication.getId());
+                    db.favoritePublicationDao().delete(favoriteToDelete);
+                }
+            });
         });
     }
 

@@ -1,6 +1,8 @@
 package com.svalero.memazo.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,71 +17,64 @@ import com.bumptech.glide.Glide;
 import com.svalero.memazo.R;
 import com.svalero.memazo.db.AppDatabase;
 import com.svalero.memazo.domain.FavoritePublication;
-import com.svalero.memazo.domain.Publication;
+import com.svalero.memazo.domain.Publication; // Se mantiene por el ViewHolder
 
 import java.util.List;
 
-public class FavoritePublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.PublicationViewHolder> {
-    private Context context;
-    private List<Publication> publications;
 
-    public FavoritePublicationAdapter(Context context, List<Publication> publications) {
+public class FavoritePublicationAdapter extends RecyclerView.Adapter<FavoritePublicationAdapter.PublicationViewHolder> {
+    private Context context;
+    private List<FavoritePublication> favoritePublications;
+
+    public FavoritePublicationAdapter(Context context, List<FavoritePublication> favoritePublications) {
         this.context = context;
-        this.publications = publications;
+        this.favoritePublications = favoritePublications;
     }
 
-    public void setPublications(List<Publication> publications) {
-        this.publications = publications;
+    public void setFavorites(List<FavoritePublication> favoritePublications) {
+        this.favoritePublications = favoritePublications;
     }
 
     @NonNull
     @Override
-    public PublicationAdapter.PublicationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public PublicationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_publication, parent, false);
-        return new PublicationAdapter.PublicationViewHolder(view);
+        return new PublicationViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull PublicationAdapter.PublicationViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull PublicationViewHolder holder, int position) {
+        FavoritePublication favorite = favoritePublications.get(position);
 
-        Publication publication = publications.get(position);
-
-        holder.tvAuthor.setText(publication.getUserName());
-        holder.tvDescription.setText(publication.getContent());
+        holder.tvAuthor.setText(favorite.getUserName());
+        holder.tvDescription.setText(favorite.getContent());
         Glide.with(holder.itemView.getContext())
-                .load(publication.getImageUrl())
+                .load(favorite.getImageUrl())
                 .fallback(R.drawable.ic_image_not_found)
                 .error(R.drawable.ic_image_not_found)
                 .into(holder.ivImage);
 
-        AppDatabase db = AppDatabase.getInstance(context);
+        holder.cbFavorite.setChecked(true);
 
-        // Comprobamos si el item ya está en favoritos
-        FavoritePublication favorite = db.favoritePublicationDao().getById(publication.getId());
-        holder.cbFavorite.setChecked(favorite != null);
-
-        // Asignamos el listener al checkbox
         holder.cbFavorite.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                // Si el checkbox está marcado, añadimos la publicación a la base de datos
-                FavoritePublication newFavorite = new FavoritePublication(); // Nombre de variable corregido
-                newFavorite.setId(publication.getId());
-                newFavorite.setUserName(publication.getUserName());
-                newFavorite.setContent(publication.getContent());
-                newFavorite.setImageUrl(publication.getImageUrl());
-                db.favoritePublicationDao().insert(newFavorite);
-            } else {
-                // Si el checkbox no está marcado, eliminamos la publicación de la base de datos
-                FavoritePublication favoriteToDelete = new FavoritePublication();
-                favoriteToDelete.setId(publication.getId());
-                db.favoritePublicationDao().delete(favoriteToDelete);
+            if (!isChecked) {
+                AppDatabase.databaseWriteExecutor.execute(() -> {
+                    AppDatabase db = AppDatabase.getInstance(context);
+                    db.favoritePublicationDao().delete(favorite);
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        favoritePublications.remove(position);
+                        notifyItemRemoved(position);
+                        notifyItemRangeChanged(position, favoritePublications.size());
+                    });
+                });
             }
         });
     }
-
     @Override
     public int getItemCount() {
-        return publications.size();
+
+        return favoritePublications.size();
     }
 
     public static class PublicationViewHolder extends RecyclerView.ViewHolder {
@@ -97,4 +92,3 @@ public class FavoritePublicationAdapter extends RecyclerView.Adapter<Publication
         }
     }
 }
-
