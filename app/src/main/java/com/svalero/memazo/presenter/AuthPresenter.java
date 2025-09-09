@@ -5,34 +5,26 @@ import com.svalero.memazo.domain.LoginRequest;
 import com.svalero.memazo.domain.User;
 import com.svalero.memazo.model.AuthModel;
 
-// El Presenter debe implementar los dos listeners del Model (para registro y para login)
 public class AuthPresenter implements AuthContract.Presenter, AuthContract.Model.OnRegisterListener, AuthContract.Model.OnLoginListener {
 
-    private final AuthContract.View view;
-    private final AuthContract.Model model;
+    private AuthContract.View view;
+    private AuthContract.Model model;
 
     public AuthPresenter(AuthContract.View view) {
         this.view = view;
-        this.model = new AuthModel(); // El Presenter crea su Model
+        this.model = new AuthModel();
     }
 
-    /**
-     * Pide al Model que inicie el registro de un usuario.
-     */
     @Override
     public void registerUser(User user) {
         model.registerUser(user, this);
     }
 
-    /**
-     * Pide al Model que inicie el login de un usuario.
-     */
     @Override
     public void loginUser(LoginRequest loginRequest) {
         model.loginUser(loginRequest, this);
     }
 
-    // Callbacks del Model para el REGISTRO
     @Override
     public void onRegisterSuccess() {
         view.showRegistrationSuccess();
@@ -43,10 +35,9 @@ public class AuthPresenter implements AuthContract.Presenter, AuthContract.Model
         view.showError(message);
     }
 
-    // Callbacks del Model para el LOGIN
     @Override
-    public void onLoginSuccess() {
-        view.showLoginSuccess();
+    public void onLoginSuccess(User user) {
+        view.showLoginSuccess(user);
     }
 
     @Override

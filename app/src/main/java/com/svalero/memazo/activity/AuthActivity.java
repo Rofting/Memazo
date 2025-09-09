@@ -1,150 +1,173 @@
 package com.svalero.memazo.activity;
 
-import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.svalero.memazo.R;
 import com.svalero.memazo.contract.AuthContract;
 import com.svalero.memazo.databinding.ActivityAuthBinding;
 import com.svalero.memazo.domain.LoginRequest;
 import com.svalero.memazo.domain.User;
 import com.svalero.memazo.presenter.AuthPresenter;
-import java.util.Calendar;
 
 public class AuthActivity extends AppCompatActivity implements AuthContract.View {
 
     private ActivityAuthBinding binding;
     private AuthContract.Presenter presenter;
+
     private boolean isLoginMode = false;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityAuthBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // La Vista crea su Presenter, pasándose a sí misma como la Vista
         presenter = new AuthPresenter(this);
 
-        // Los listeners ahora llaman a los métodos de la Activity, que a su vez llamarán al Presenter
-        binding.btnRegister.setOnClickListener(v -> validateAndRegister());
-        binding.btnLogin.setOnClickListener(v -> validateAndLogin());
         binding.tvToggleMode.setOnClickListener(v -> toggleMode());
 
-        setupDatePicker();
-        // Inicializamos la vista en modo registro por defecto
-        toggleMode();
-        toggleMode();
+        binding.btnRegister.setOnClickListener(v -> validateAndRegister());
+
+        binding.btnLogin.setOnClickListener(v -> validateAndLogin());
+
+        // Estado inicial: Registro
+        isLoginMode = false;
+        applyModeUI();
     }
 
     private void toggleMode() {
         isLoginMode = !isLoginMode;
+        applyModeUI();
+    }
+
+    private void applyModeUI() {
         if (isLoginMode) {
+            // MODO LOGIN
+            binding.tvTitle.setText(getString(R.string.login));
+            binding.tvToggleMode.setText(getString(R.string.toggle_to_register));
+
             binding.tilName.setVisibility(View.GONE);
             binding.tilBirthDate.setVisibility(View.GONE);
             binding.tilAvatar.setVisibility(View.GONE);
             binding.tilPhone.setVisibility(View.GONE);
             binding.tvSexLabel.setVisibility(View.GONE);
             binding.rgSex.setVisibility(View.GONE);
+
             binding.btnRegister.setVisibility(View.GONE);
             binding.btnLogin.setVisibility(View.VISIBLE);
-            binding.tvTitle.setText("Iniciar Sesión");
-            binding.tvToggleMode.setText("¿No tienes cuenta? Regístrate");
         } else {
+            // MODO REGISTRO
+            binding.tvTitle.setText(getString(R.string.create_account));
+            binding.tvToggleMode.setText(getString(R.string.toggle_to_login));
+
             binding.tilName.setVisibility(View.VISIBLE);
             binding.tilBirthDate.setVisibility(View.VISIBLE);
             binding.tilAvatar.setVisibility(View.VISIBLE);
             binding.tilPhone.setVisibility(View.VISIBLE);
             binding.tvSexLabel.setVisibility(View.VISIBLE);
             binding.rgSex.setVisibility(View.VISIBLE);
+
             binding.btnRegister.setVisibility(View.VISIBLE);
             binding.btnLogin.setVisibility(View.GONE);
-            binding.tvTitle.setText("Crear Cuenta");
-            binding.tvToggleMode.setText("¿Ya tienes cuenta? Inicia Sesión");
         }
     }
 
-    private void validateAndRegister() {
-        String name = binding.etName.getText().toString().trim();
-        String email = binding.etEmail.getText().toString().trim();
-        String password = binding.etPassword.getText().toString().trim();
-        String displayDate = binding.etBirthDate.getText().toString().trim();
+    // Registro
 
-        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || displayDate.isEmpty()) {
-            showError("Por favor, rellena todos los campos obligatorios");
+    private void validateAndRegister() {
+        String name = safeText(binding.etName);
+        String email = safeText(binding.etEmail);
+        String password = safeText(binding.etPassword);
+        String birthDate = safeText(binding.etBirthDate);
+
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || birthDate.isEmpty()) {
+            showError(getString(R.string.error_fill_all_fields));
             return;
         }
 
-        String birthDateForApi = (String) binding.etBirthDate.getTag();
-        String avatar = binding.etAvatar.getText().toString().trim();
-        String phone = binding.etPhone.getText().toString().trim();
-        String sex = binding.rbMale.isChecked() ? "Male" : "Female";
+        String avatar = safeText(binding.etAvatar);
+        String phone = safeText(binding.etPhone);
+        String sex = binding.rbMale.isChecked() ? getString(R.string.male) : getString(R.string.female);
 
-        User user = new User(name, email, password, birthDateForApi, avatar, phone, sex, true);
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(password);
+        user.setBirthDate(birthDate);
+        user.setAvatar(avatar);
+        user.setPhone(phone);
+        user.setSex(sex);
+        user.setActive(true);
 
-        // La Vista le pasa los datos al Presenter y se olvida del tema
         presenter.registerUser(user);
     }
 
     private void validateAndLogin() {
-        String email = binding.etEmail.getText().toString().trim();
-        String password = binding.etPassword.getText().toString().trim();
+        String email = safeText(binding.etEmail);
+        String password = safeText(binding.etPassword);
 
         if (email.isEmpty() || password.isEmpty()) {
-            showError("Email y contraseña son obligatorios");
+            showError(getString(R.string.error_email_password_required));
             return;
         }
 
         LoginRequest loginRequest = new LoginRequest(email, password);
-
-        // La Vista le pasa los datos al Presenter
         presenter.loginUser(loginRequest);
     }
 
-    private void setupDatePicker() {
-        binding.etBirthDate.setOnClickListener(v -> {
-            final Calendar calendar = Calendar.getInstance();
-            int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
-            int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-            DatePickerDialog datePickerDialog = new DatePickerDialog(this,
-                    (view, selectedYear, selectedMonth, selectedDay) -> {
-                        String displayFormat = selectedDay + "/" + (selectedMonth + 1) + "/" + selectedYear;
-                        binding.etBirthDate.setText(displayFormat);
-                        String apiFormat = selectedYear + "-" + String.format("%02d", selectedMonth + 1) + "-" + String.format("%02d", selectedDay);
-                        binding.etBirthDate.setTag(apiFormat);
-                    }, year, month, day);
-
-            datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
-            datePickerDialog.show();
-        });
-        binding.etBirthDate.setFocusable(false);
+    @Override
+    public void showRegistrationSuccess() {
+        Toast.makeText(this, getString(R.string.registration_success), Toast.LENGTH_LONG).show();
+        if (!isLoginMode) {
+            // después de registrarse, cambia a login
+            isLoginMode = true;
+            applyModeUI();
+        }
     }
 
-    private void navigateToFeed() {
+    public void showRegistrationError(String message) {
+        showError(message != null ? message : "Registration error");
+    }
+
+    @Override
+    public void showLoginSuccess(User user) {
+        if (user != null) {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+            sp.edit()
+                    .putLong("logged_in_user_id", user.getId())
+                    .putString("logged_in_user_name", user.getName())
+                    .apply();
+        }
+        Toast.makeText(this,
+                getString(R.string.login_success_welcome, user != null ? user.getName() : ""),
+                Toast.LENGTH_SHORT).show();
+
+        // Navega al Feed
         Intent intent = new Intent(this, FeedActivity.class);
         startActivity(intent);
         finish();
     }
 
-    // MÉTODOS DE LA VISTA (LLAMADOS POR EL PRESENTER)
-
-    @Override
-    public void showRegistrationSuccess() {
-        Toast.makeText(this, "Usuario registrado con éxito", Toast.LENGTH_LONG).show();
+    public void showLoginError(String message) {
+        showError(message != null ? message : "Login error");
     }
 
     @Override
-    public void showLoginSuccess() {
-        Toast.makeText(this, "Login correcto", Toast.LENGTH_SHORT).show();
-        navigateToFeed();
+    public void showError(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
 
-    @Override
-    public void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+
+    private static String safeText(android.widget.EditText et) {
+        return et.getText() != null ? et.getText().toString().trim() : "";
     }
 }

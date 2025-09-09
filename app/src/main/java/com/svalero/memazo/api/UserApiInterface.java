@@ -13,6 +13,7 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface UserApiInterface {
 
@@ -36,5 +37,8 @@ public interface UserApiInterface {
 
     @GET("users/{id}/publications")
     Call<List<Publication>> getUserPublications(@Path("id") long id);
+
+    @GET("friendships")
+    Call<List<User>> getFriends(@Query("userId") long userId);
 
 }

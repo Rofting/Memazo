@@ -1,5 +1,7 @@
 package com.svalero.memazo.presenter;
 
+import android.content.Context;
+
 import com.svalero.memazo.contract.FeedContract;
 import com.svalero.memazo.contract.MapContract;
 import com.svalero.memazo.domain.Publication;
@@ -11,9 +13,9 @@ public class MapPresenter implements MapContract.Presenter, FeedContract.Model.O
     private MapContract.View view;
     private FeedModel model;
 
-    public MapPresenter(MapContract.View view) {
+    public MapPresenter(MapContract.View view, Context context) {
         this.view = view;
-        this.model = new FeedModel();
+        this.model = new FeedModel(context);
     }
 
     @Override
@@ -22,12 +24,12 @@ public class MapPresenter implements MapContract.Presenter, FeedContract.Model.O
         }
 
     @Override
-    public void onSuccess(List<Publication> publications) {
+    public void onLoadPublicationsSuccess(List<Publication> publications) {
         view.showPublicationsOnMap(publications);
     }
 
     @Override
-    public void onError(String message) {
+    public void onLoadPublicationsError(String message) {
         view.showError(message);
     }
 }

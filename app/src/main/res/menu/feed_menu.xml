@@ -20,4 +20,10 @@
         android:icon="@drawable/ic_profile"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/action_settings"
+        android:title="Ajustes"
+        android:icon="@drawable/ic_settings"
+        app:showAsAction="ifRoom" />
+
 </menu>

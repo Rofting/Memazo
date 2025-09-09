@@ -12,18 +12,14 @@ import java.util.List;
 
 @Dao
 public interface FavoritePublicationDao {
-    @Insert
-    void insert(FavoritePublication favorite);
+    @Insert void insert(FavoritePublication favorite);
+    @Update int update(FavoritePublication favorite);
+    @Delete int delete(FavoritePublication favorite);
 
-    @Query("SELECT * FROM FavoritePublication")
+    @Query("SELECT * FROM FavoritePublication ORDER BY id DESC")
     List<FavoritePublication> getAll();
-
-    @Delete
-    void delete(FavoritePublication favorite);
-
-    @Update
-    void update(FavoritePublication favorite);
 
     @Query("SELECT * FROM FavoritePublication WHERE id = :id")
     FavoritePublication getById(long id);
+
 }

@@ -1,6 +1,8 @@
 package com.svalero.memazo.domain;
 
-public class Publication {
+import java.io.Serializable;
+
+public class Publication implements Serializable {
 
     private long id;
     private String content;

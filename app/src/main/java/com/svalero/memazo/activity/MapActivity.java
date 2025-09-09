@@ -40,7 +40,7 @@ public class MapActivity extends AppCompatActivity implements Style.OnStyleLoade
         setContentView(R.layout.activity_map);
 
         mapView = findViewById(R.id.mapView);
-        presenter = new MapPresenter(this);
+        presenter = new MapPresenter(this, this);
 
         mapboxMap = mapView.getMapboxMap();
         mapboxMap.loadStyleUri(Style.MAPBOX_STREETS, this);
@@ -69,7 +69,6 @@ public class MapActivity extends AppCompatActivity implements Style.OnStyleLoade
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);
 
-        // BUCLE CORREGIDO
         for (Publication publication : publications) {
             if (publication.getLatitude() == 0.0 && publication.getLongitude() == 0.0) {
                 continue;

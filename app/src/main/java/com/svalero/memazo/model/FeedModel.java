@@ -1,5 +1,9 @@
 package com.svalero.memazo.model;
 
+import android.content.Context;
+
+import androidx.annotation.NonNull; // Asegúrate de importar esto
+
 import com.svalero.memazo.api.ApiClient;
 import com.svalero.memazo.api.PublicationApiInterface;
 import com.svalero.memazo.contract.FeedContract;
@@ -13,6 +17,11 @@ import retrofit2.Response;
 
 public class FeedModel implements FeedContract.Model {
 
+    private Context context;
+
+    public FeedModel(Context context) {
+        this.context = context;
+    }
     @Override
     public void loadPublications(OnLoadPublicationsListener listener) {
         PublicationApiInterface api = ApiClient.getRetrofitService(PublicationApiInterface.class);
@@ -20,17 +29,39 @@ public class FeedModel implements FeedContract.Model {
 
         call.enqueue(new Callback<List<Publication>>() {
             @Override
-            public void onResponse(Call<List<Publication>> call, Response<List<Publication>> response) {
+            public void onResponse(@NonNull Call<List<Publication>> call, @NonNull Response<List<Publication>> response) {
                 if (response.isSuccessful()) {
-                    listener.onSuccess(response.body());
+                    listener.onLoadPublicationsSuccess(response.body());
                 } else {
-                    listener.onError("Error al cargar las publicaciones: " + response.code());
+                    listener.onLoadPublicationsError("Error al cargar las publicaciones: " + response.code());
                 }
             }
 
             @Override
-            public void onFailure(Call<List<Publication>> call, Throwable t) {
-                listener.onError("Fallo de conexión: " + t.getMessage());
+            public void onFailure(@NonNull Call<List<Publication>> call, @NonNull Throwable t) {
+                listener.onLoadPublicationsError("Fallo de conexión: " + t.getMessage());
+            }
+
+        });
+    }
+    @Override
+    public void deletePublication(long publicationId, OnDeletePublicationListener listener) {
+        PublicationApiInterface api = ApiClient.getRetrofitService(PublicationApiInterface.class);
+        Call<Void> call = api.deletePublication(publicationId);
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                // el servidor responde. Comprobamos que la respuesta es exitosa
+                if (response.isSuccessful()) {
+                    listener.onDeleteSuccess();
+                } else {
+                    listener.onDeleteError("Error al eliminar la publicación: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                listener.onDeleteError("Fallo de conexión: " + t.getMessage());
             }
         });
     }

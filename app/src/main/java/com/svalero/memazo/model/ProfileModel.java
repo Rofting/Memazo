@@ -1,29 +1,24 @@
 package com.svalero.memazo.model;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
-
 import com.svalero.memazo.api.ApiClient;
+import com.svalero.memazo.api.PublicationApiInterface;
 import com.svalero.memazo.api.UserApiInterface;
 import com.svalero.memazo.contract.ProfileContract;
 import com.svalero.memazo.db.AppDatabase;
 import com.svalero.memazo.domain.FavoritePublication;
 import com.svalero.memazo.domain.Publication;
+import com.svalero.memazo.domain.PublicationInDto;
 import com.svalero.memazo.domain.User;
-
 import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class ProfileModel implements ProfileContract.Model {
 
-    // 1. Añadimos una variable para guardar el contexto
     private Context context;
 
-    // 2. Creamos un constructor para recibir el contexto
     public ProfileModel(Context context) {
         this.context = context;
     }
@@ -43,7 +38,7 @@ public class ProfileModel implements ProfileContract.Model {
             }
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                listener.onUserError("Fallo de conexión: " + t.getMessage());
+                listener.onUserError("Fallo de conexión (usuario): " + t.getMessage());
             }
         });
     }
@@ -58,29 +53,87 @@ public class ProfileModel implements ProfileContract.Model {
                 if (response.isSuccessful()) {
                     listener.onPublicationsLoaded(response.body());
                 } else {
-                    listener.onPublicationsError("Error al cargar las publicaciones: " + response.code());
+                    listener.onPublicationsError("Error al cargar publicaciones: " + response.code());
                 }
             }
             @Override
             public void onFailure(Call<List<Publication>> call, Throwable t) {
-                listener.onPublicationsError("Fallo de conexión: " + t.getMessage());
+                listener.onPublicationsError("Fallo de conexión (publicaciones): " + t.getMessage());
             }
         });
     }
 
     @Override
     public void loadFavorites(OnFavoritesLoadedListener listener) {
-        // 3. Las operaciones de base de datos DEBEN ejecutarse en un hilo secundario
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // Obtenemos la instancia de la base de datos
             AppDatabase db = AppDatabase.getInstance(context);
-            // Realizamos la consulta para obtener todos los favoritos
             List<FavoritePublication> favorites = db.favoritePublicationDao().getAll();
+            listener.onFavoritesLoaded(favorites);
+        });
+    }
 
-            // 4. Devolvemos el resultado al hilo principal para actualizar la UI
-            new Handler(Looper.getMainLooper()).post(() -> {
-                listener.onFavoritesLoaded(favorites);
-            });
+    @Override
+    public void deletePublication(long publicationId, OnDeletePublicationListener listener) {
+        PublicationApiInterface api = ApiClient.getRetrofitService(PublicationApiInterface.class);
+        Call<Void> call = api.deletePublication(publicationId);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    listener.onDeletePublicationSuccess();
+                } else {
+                    listener.onDeletePublicationError("Error al borrar: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                listener.onDeletePublicationError("Fallo de conexión (borrado): " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void updatePublication(long publicationId, PublicationInDto publicationDto, OnUpdatePublicationListener listener) {
+        PublicationApiInterface api = ApiClient.getRetrofitService(PublicationApiInterface.class);
+        Call<Publication> call = api.updatePublication(publicationId, publicationDto);
+
+        call.enqueue(new Callback<Publication>() {
+            @Override
+            public void onResponse(Call<Publication> call, Response<Publication> response) {
+                if (response.isSuccessful()) {
+                    listener.onUpdatePublicationSuccess(response.body());
+                } else {
+                    listener.onUpdatePublicationError("Error al actualizar: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<Publication> call, Throwable t) {
+                listener.onUpdatePublicationError("Fallo de conexión (actualización): " + t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void updateUser(long userId, User user, OnUserUpdatedListener listener) {
+        UserApiInterface api = ApiClient.getRetrofitService(UserApiInterface.class);
+        Call<User> call = api.modifyUser(userId, user);
+
+        call.enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful()) {
+
+                    listener.onUserUpdated(response.body());
+                } else {
+
+                    listener.onUserUpdateError("Error al actualizar el usuario: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                listener.onUserUpdateError("Fallo de conexión (usuario): " + t.getMessage());
+            }
         });
     }
 }

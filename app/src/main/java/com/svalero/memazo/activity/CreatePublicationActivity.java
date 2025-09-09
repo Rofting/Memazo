@@ -1,21 +1,23 @@
 package com.svalero.memazo.activity;
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.svalero.memazo.R;
@@ -30,14 +32,15 @@ public class CreatePublicationActivity extends AppCompatActivity implements Crea
     private CreatePublicationContract.Presenter presenter;
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
+    private double latitude = 0.0;
+    private double longitude = 0.0;
+    private PublicationInDto pendingPublicationDto;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    // Si el usuario concede el permiso, reintentamos la acción que lo requería.
-                    getCurrentLocationAndPublish();
+                    getCurrentLocation();
                 } else {
-                    // Si el usuario deniega el permiso, informamos y desactivamos la opción.
                     Toast.makeText(this, "Permiso de ubicación denegado.", Toast.LENGTH_SHORT).show();
                     binding.switchLocation.setChecked(false);
                 }
@@ -54,12 +57,15 @@ public class CreatePublicationActivity extends AppCompatActivity implements Crea
 
         setupSpinners();
 
-        binding.btnPublish.setOnClickListener(v -> handleCreatePublication());
+        binding.switchLocation.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                requestLocationPermission();
+            }
+        });
+
+        binding.btnPublish.setOnClickListener(v -> createPublication());
     }
 
-    /**
-     * Configura los spinners con las opciones de los arrays de recursos.
-     */
     private void setupSpinners() {
         ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
                 R.array.type_content_options, android.R.layout.simple_spinner_item);
@@ -72,115 +78,100 @@ public class CreatePublicationActivity extends AppCompatActivity implements Crea
         binding.spinnerPrivacy.setAdapter(privacyAdapter);
     }
 
-    /**
-     * Método principal que se ejecuta al pulsar el botón "Publicar".
-     * Valida los datos y decide si obtener la ubicación o publicar directamente.
-     */
-    private void handleCreatePublication() {
-        String content = binding.etPublicationContent.getText().toString().trim();
-        if (content.isEmpty()) {
-            showError("El contenido es obligatorio.");
-            return;
-        }
-
-        if (binding.switchLocation.isChecked()) {
-            Toast.makeText(this, "Obteniendo ubicación...", Toast.LENGTH_SHORT).show();
-            getCurrentLocationAndPublish();
-        } else {
-            // Si la ubicación no está activada, publicamos directamente sin coordenadas.
-            sendPublicationToPresenter(0.0, 0.0);
-        }
-    }
-
-    /**
-     * Intenta obtener la última ubicación conocida del dispositivo.
-     * Si no tiene permisos, los solicita.
-     * Si la obtiene, publica. Si no, solicita una nueva.
-     */
-    private void getCurrentLocationAndPublish() {
+    private void requestLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Si no tenemos permiso, lo solicitamos. El launcher se encargará del resultado.
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-            return;
+        } else {
+            getCurrentLocation();
         }
-
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, location -> {
-                    if (location != null) {
-                        // Ubicación rápida encontrada. Publicamos con estas coordenadas.
-                        Toast.makeText(this, "Ubicación obtenida. Publicando...", Toast.LENGTH_SHORT).show();
-                        sendPublicationToPresenter(location.getLatitude(), location.getLongitude());
-                    } else {
-                        // No hay una "última ubicación", así que pedimos una nueva activamente.
-                        requestNewLocationAndPublish();
-                    }
-                })
-                .addOnFailureListener(this, e -> {
-                    showError("No se pudo obtener la ubicación: " + e.getMessage());
-                    binding.switchLocation.setChecked(false);
-                });
     }
 
-    /**
-     * Solicita activamente una nueva actualización de la ubicación.
-     * Publicará cuando reciba la primera respuesta.
-     */
-    private void requestNewLocationAndPublish() {
+    private void getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
-        // Creamos una solicitud de ubicación de alta precisión que se ejecutará una sola vez.
+        fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
+            if (location != null) {
+                this.latitude = location.getLatitude();
+                this.longitude = location.getLongitude();
+                Toast.makeText(this, "Ubicación obtenida", Toast.LENGTH_SHORT).show();
+                if (pendingPublicationDto != null) {
+                    sendPublicationToPresenter();
+                }
+            } else {
+                requestNewLocation();
+            }
+        });
+    }
+
+    private void requestNewLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
         LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
-                .setMaxUpdates(1) // Solo queremos una actualización
+                .setMaxUpdates(1)
                 .build();
 
         locationCallback = new LocationCallback() {
             @Override
-            public void onLocationResult(com.google.android.gms.location.LocationResult locationResult) {
+            public void onLocationResult(@NonNull LocationResult locationResult) {
                 Location location = locationResult.getLastLocation();
                 if (location != null) {
-                    // Nueva ubicación recibida. Publicamos con estas coordenadas.
-                    Toast.makeText(CreatePublicationActivity.this, "Nueva ubicación obtenida. Publicando...", Toast.LENGTH_SHORT).show();
-                    sendPublicationToPresenter(location.getLatitude(), location.getLongitude());
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    Toast.makeText(CreatePublicationActivity.this, "Nueva ubicación obtenida", Toast.LENGTH_SHORT).show();
+                    fusedLocationClient.removeLocationUpdates(locationCallback);
+                    if (pendingPublicationDto != null) {
+                        sendPublicationToPresenter();
+                    }
                 }
             }
         };
-
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
     }
 
-    /**
-     * Método centralizado que crea el objeto DTO y lo envía al Presenter.
-     * @param latitude  La latitud para la publicación.
-     * @param longitude La longitud para la publicación.
-     */
-    private void sendPublicationToPresenter(double latitude, double longitude) {
+    private void createPublication() {
         String content = binding.etPublicationContent.getText().toString().trim();
         String imageUrl = binding.etImageUrl.getText().toString().trim();
         String typeContent = binding.spinnerTypeContent.getSelectedItem().toString();
         String privacy = binding.spinnerPrivacy.getSelectedItem().toString();
 
-        // TODO: Obtener el ID de usuario real desde la sesión, SharedPreferences, etc.
-        long userId = 1L;
+        if (content.isEmpty()) {
+            showError(getString(R.string.error_content_required));
+            return;
+        }
 
-        PublicationInDto publicationDto = new PublicationInDto(
-                userId,
-                content,
-                imageUrl.isEmpty() ? null : imageUrl,
-                typeContent,
-                privacy,
-                latitude,
-                longitude
-        );
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        long userId = sharedPreferences.getLong("logged_in_user_id", -1L);
 
-        presenter.createPublication(publicationDto);
+        if (userId == -1L) {
+            showError("Error: No se ha encontrado un usuario válido.");
+            return;
+        }
+
+        pendingPublicationDto = new PublicationInDto(userId, content, imageUrl.isEmpty() ? null : imageUrl, typeContent, privacy, 0.0, 0.0);
+
+        if (binding.switchLocation.isChecked()) {
+            requestLocationPermission();
+        } else {
+            sendPublicationToPresenter();
+        }
     }
 
-    /**
-     * Detiene las actualizaciones de ubicación cuando la actividad no está en primer plano
-     * para evitar fugas de memoria y consumo de batería.
-     */
+    private void sendPublicationToPresenter() {
+        if (pendingPublicationDto == null) return;
+
+        if (binding.switchLocation.isChecked()) {
+            pendingPublicationDto.setLatitude(this.latitude);
+            pendingPublicationDto.setLongitude(this.longitude);
+        }
+
+        presenter.createPublication(pendingPublicationDto);
+        pendingPublicationDto = null;
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -189,10 +180,10 @@ public class CreatePublicationActivity extends AppCompatActivity implements Crea
         }
     }
 
-
     @Override
     public void showSuccess(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        finish();
     }
 
     @Override
