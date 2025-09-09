@@ -35,6 +35,9 @@
             android:name=".activity.FeedActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.SettingsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.AuthActivity"
             android:exported="true">
             <intent-filter>

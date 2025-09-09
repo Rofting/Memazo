@@ -1,5 +1,29 @@
-<resources>
-    <string name="app_name">Memazo</string>
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">Memazo</string>
+
+    <!-- AuthActivity -->
+    <string name="create_account">Crear Cuenta</string>
+    <string name="login">Iniciar Sesión</string>
+    <string name="register">Registrar</string>
+    <string name="name_hint">Nombre</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="birdate_hint">Fecha de Nacimiento</string>
+    <string name="avatar_hint">URL del Avatar</string>
+    <string name="phone_hint">Teléfono</string>
+    <string name="sex_label">Sexo</string>
+    <string name="male">Hombre</string>
+    <string name="female">Mujer</string>
+    <string name="toggle_mode">¿Ya tienes cuenta? Inicia Sesión</string>
+    <string name="toggle_to_register">¿No tienes cuenta? Regístrate</string>
+    <string name="toggle_to_login">¿Ya tienes cuenta? Inicia Sesión</string>
+    <string name="error_fill_all_fields">Por favor, rellena todos los campos</string>
+    <string name="error_email_password_required">Email y contraseña son obligatorios</string>
+    <string name="registration_success">Usuario registrado con éxito. Por favor, inicia sesión.</string>
+    <string name="login_success_welcome">Login correcto. ¡Bienvenido %1$s!</string>
+
+    <!-- Opciones de contenido / privacidad -->
     <string-array name="type_content_options">
         <item>TEXT</item>
         <item>IMAGE</item>
@@ -9,4 +33,82 @@
         <item>PUBLIC</item>
         <item>PRIVATE</item>
     </string-array>
+
+    <!-- Preferencias / Tema -->
+    <string-array name="theme_entries">
+        <item>Claro</item>
+        <item>Oscuro</item>
+        <item>Por defecto</item>
+    </string-array>
+    <string-array name="theme_values">
+        <item>light</item>
+        <item>dark</item>
+        <item>default</item>
+    </string-array>
+
+    <!-- Perfil -->
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="my_publications">Mis Publicaciones</string>
+    <string name="my_favorites">Mis Favoritos</string>
+
+    <!-- Diálogo editar usuario -->
+    <string name="edit_user_title">Editar Usuario</string>
+    <string name="save_button">Guardar</string>
+    <string name="cancel_button">Cancelar</string>
+
+    <!-- Comunes / Menú -->
+    <string name="action_settings">Ajustes</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_yes">Sí</string>
+    <string name="action_no">No</string>
+
+    <!-- Amigos -->
+    <string name="friends_title">Amigos</string>
+    <string name="delete_friend_title">Eliminar amistad</string>
+    <string name="delete_friend_message">¿Seguro que quieres eliminar a %1$s de tus amistades?</string>
+    <string name="friend_deleted_ok">Amistad eliminada</string>
+    <string name="friend_deleted_error">No se pudo eliminar la amistad</string>
+
+    <!-- Publicaciones -->
+    <string name="publication_delete_message">¿Seguro que quieres eliminar esta publicación?</string>
+
+    <!-- Favoritos -->
+    <string name="edit_favorite_title">Editar nota</string>
+    <string name="edit_favorite_hint">Escribe una nota para este favorito</string>
+    <string name="favorite_updated">Favorito actualizado</string>
+    <string name="favorite_update_error">No se pudo guardar la nota</string>
+    <string name="favorite_deleted_ok">Favorito eliminado</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Preferencias</string>
+    <string name="settings_username_label">Nombre de usuario</string>
+    <string name="settings_username_hint">Tu nombre de usuario</string>
+    <string name="settings_notifications">Activar notificaciones</string>
+    <string name="settings_theme_label">Tema de la aplicación</string>
+    <string name="settings_save_changes">Guardar Cambios</string>
+    <string name="settings_saved_ok">Preferencias guardadas</string>
+
+    <!-- Crear publicación -->
+    <string name="create_publication_title">Crear Publicación</string>
+    <string name="create_publication_content_hint">¿Qué estás pensando?</string>
+    <string name="create_publication_image_hint">URL de la imagen (opcional)</string>
+    <string name="type_content_label">Tipo de Contenido</string>
+    <string name="privacy_label">Privacidad</string>
+    <string name="attach_current_location">Adjuntar ubicación actual</string>
+    <string name="publish_action">Publicar</string>
+
+    <!-- Editar publicación (diálogo) -->
+    <string name="edit_publication_title">Editar publicación</string>
+    <string name="edit_publication_content_hint">Contenido</string>
+    <string name="edit_publication_image_hint">URL de la imagen</string>
+
+    <!-- Item publicación (placeholders) -->
+    <string name="publication_author_placeholder" tools:ignore="Typos">Nombre del Autor</string>
+    <string name="publication_description_placeholder">Descripción de la publicación.</string>
+
+    <!-- Errores comunes -->
+    <string name="error_content_required">El contenido es obligatorio.</string>
+    <string name="error_invalid_user">Error: No se ha encontrado un usuario válido.</string>
 </resources>

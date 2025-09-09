@@ -1,7 +1,10 @@
 package com.svalero.memazo.domain;
 
-public class User {
+import java.io.Serializable;
 
+public class User implements Serializable {
+
+    private long id;
     private String name;
     private String email;
     private String password;
@@ -10,6 +13,9 @@ public class User {
     private String phone;
     private String sex;
     private Boolean active;
+
+    public User() {
+    }
 
     public User(String name, String email, String password, String birthDate, String avatar, String phone, String sex, Boolean active) {
         this.name = name;
@@ -22,12 +28,12 @@ public class User {
         this.active = active;
     }
 
-    public Boolean getActive() {
-        return active;
+    public long getId() {
+        return id;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -84,5 +90,13 @@ public class User {
 
     public void setSex(String sex) {
         this.sex = sex;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

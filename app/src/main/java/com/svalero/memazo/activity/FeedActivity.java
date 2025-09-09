@@ -15,13 +15,13 @@ import com.svalero.memazo.R;
 import com.svalero.memazo.adapter.PublicationAdapter;
 import com.svalero.memazo.contract.FeedContract;
 import com.svalero.memazo.databinding.ActivityFeedBinding;
+import com.svalero.memazo.dialog.EditPublicationDialogFragment;
 import com.svalero.memazo.domain.Publication;
 import com.svalero.memazo.presenter.FeedPresenter;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class FeedActivity extends AppCompatActivity implements FeedContract.View {
+public class FeedActivity extends AppCompatActivity implements FeedContract.View, PublicationAdapter.OnPublicationListener {
 
     private ActivityFeedBinding binding;
     private FeedContract.Presenter presenter;
@@ -33,6 +33,7 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
         binding = ActivityFeedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.mainLayout, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -40,12 +41,11 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
         });
 
         setSupportActionBar(binding.toolbarFeed);
-
         getSupportActionBar().setTitle("Memazo");
 
-        presenter = new FeedPresenter(this);
+        presenter = new FeedPresenter(this, this);
 
-        publicationAdapter = new PublicationAdapter(this, new ArrayList<>());
+        publicationAdapter = new PublicationAdapter(this, new ArrayList<>(), this, false);
         binding.rvPublications.setLayoutManager(new LinearLayoutManager(this));
         binding.rvPublications.setAdapter(publicationAdapter);
 
@@ -73,19 +73,24 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_view_map) {
-            // Si se pulsa el ítem del mapa, abrimos la MapActivity
+        int itemId = item.getItemId();
+        if (itemId == R.id.action_view_map) {
             Intent intent = new Intent(this, MapActivity.class);
             startActivity(intent);
             return true;
-        }
-        else if (item.getItemId() == R.id.action_profile) {
-            // Si se pulsa el ítem del perfil, abrimos la ProfileActivity
+        } else if (itemId == R.id.action_profile) {
             Intent intent = new Intent(this, ProfileActivity.class);
             startActivity(intent);
             return true;
+        } else if (itemId == R.id.action_friends) {
+            Intent intent = new Intent(this, FriendsActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (itemId == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -97,8 +102,24 @@ public class FeedActivity extends AppCompatActivity implements FeedContract.View
     }
 
     @Override
+    public void removePublication(int position) {
+        publicationAdapter.removePublicationAt(position);
+        Toast.makeText(this, "Publicación eliminada", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
     public void showError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         binding.swipeRefreshLayout.setRefreshing(false);
+    }
+
+    @Override
+    public void onDeleteClicked(long publicationId, int position) {
+        presenter.deletePublication(publicationId, position);
+    }
+    @Override
+    public void onEditClicked(Publication publication) {
+        EditPublicationDialogFragment dialog = EditPublicationDialogFragment.newInstance(publication);
+        dialog.show(getSupportFragmentManager(), "edit_dialog");
     }
 }

@@ -6,7 +6,7 @@ import com.svalero.memazo.domain.User;
 public interface AuthContract {
     interface View {
         void showRegistrationSuccess();
-        void showLoginSuccess();
+        void showLoginSuccess(User user);
         void showError(String message);
     }
 
@@ -23,7 +23,7 @@ public interface AuthContract {
         void registerUser(User user, OnRegisterListener listener);
 
         interface OnLoginListener {
-            void onLoginSuccess();
+            void onLoginSuccess(User user);
             void onLoginError(String message);
         }
         void loginUser(LoginRequest loginRequest, OnLoginListener listener);

@@ -11,6 +11,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AuthModel implements AuthContract.Model {
+
     @Override
     public void registerUser(User user, OnRegisterListener listener) {
         UserApiInterface api = ApiClient.getRetrofitService(UserApiInterface.class);
@@ -35,14 +36,12 @@ public class AuthModel implements AuthContract.Model {
     @Override
     public void loginUser(LoginRequest loginRequest, OnLoginListener listener) {
         UserApiInterface api = ApiClient.getRetrofitService(UserApiInterface.class);
-
         Call<User> call = api.login(loginRequest);
-
         call.enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
                 if (response.isSuccessful()) {
-                    listener.onLoginSuccess();
+                    listener.onLoginSuccess(response.body());
                 } else {
                     listener.onLoginError("Email o contraseña incorrectos");
                 }

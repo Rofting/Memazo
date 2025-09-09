@@ -1,37 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        tools:context=".activity.CreatePublicationActivity">
+        android:padding="24dp">
 
         <TextView
-            android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"  android:layout_marginBottom="24dp"
-            android:text="@string/create_publication_title"
-            android:textSize="28sp"
+            android:text="@string/edit_publication_title"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/create_publication_content_hint">
+            android:layout_marginTop="16dp"
+            android:hint="@string/edit_publication_content_hint">
+
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPublicationContent"
+                android:id="@+id/et_edit_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="top"
-                android:lines="5" />
+                android:lines="4" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -39,9 +36,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="@string/create_publication_image_hint">
+            android:hint="@string/edit_publication_image_hint">
+
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etImageUrl"
+                android:id="@+id/et_edit_image_url"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri" />
@@ -51,35 +49,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/type_content_label" />
-        <Spinner
-            android:id="@+id/spinnerTypeContent"
-            android:layout_width="match_parent"
-            android:layout_height="48dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="@string/privacy_label" />
         <Spinner
-            android:id="@+id/spinnerPrivacy"
+            android:id="@+id/spinner_edit_privacy"
             android:layout_width="match_parent"
             android:layout_height="48dp" />
 
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/attach_current_location" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPublish"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="24dp"
-            android:text="@string/publish_action" />
     </LinearLayout>
 </ScrollView>

@@ -7,35 +7,64 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.svalero.memazo.R;
 import com.svalero.memazo.db.AppDatabase;
+import com.svalero.memazo.db.FavoritePublicationDao;
 import com.svalero.memazo.domain.FavoritePublication;
 import com.svalero.memazo.domain.Publication;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.PublicationViewHolder> {
 
-    private Context context;
-    private List<Publication> publications;
+    public interface OnPublicationListener {
+        void onDeleteClicked(long publicationId, int position);
+        void onEditClicked(Publication publication);
+    }
 
-    public PublicationAdapter(Context context, List<Publication> publications) {
+    private final Context context;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final OnPublicationListener listener;
+    private final boolean showAdminButtons;
+    private List<Publication> publications = new ArrayList<>();
+
+    public PublicationAdapter(Context context,
+                              List<Publication> publications,
+                              OnPublicationListener listener,
+                              boolean showAdminButtons) {
         this.context = context;
-        this.publications = publications;
+        this.publications = publications != null ? publications : new ArrayList<>();
+        this.listener = listener;
+        this.showAdminButtons = showAdminButtons;
     }
 
     public void setPublications(List<Publication> publications) {
-        this.publications = publications;
+        this.publications = publications != null ? publications : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
+    public void removePublicationAt(int position) {
+        if (position >= 0 && position < publications.size()) {
+            publications.remove(position);
+            notifyItemRemoved(position);
+        }
     }
 
     @NonNull
     @Override
     public PublicationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_publication, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_publication, parent, false);
         return new PublicationViewHolder(view);
     }
 
@@ -52,43 +81,49 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 .error(R.drawable.ic_image_not_found)
                 .into(holder.ivImage);
 
-        // Comprobar el estado inicial en segundo plano
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            AppDatabase db = AppDatabase.getInstance(context);
-            FavoritePublication favorite = db.favoritePublicationDao().getById(publication.getId());
+        if (showAdminButtons) {
+            holder.btnDelete.setVisibility(View.VISIBLE);
+            holder.btnEdit.setVisibility(View.VISIBLE);
 
-            // Volvemos al hilo principal para actualizar la interfaz
-            new Handler(Looper.getMainLooper()).post(() -> {
-                // Desactivamos el listener temporalmente para evitar que se dispare solo
-                holder.cbFavorite.setOnCheckedChangeListener(null);
-                holder.cbFavorite.setChecked(favorite != null);
-                // Lo volvemos a activar con la lógica de guardar/borrar
-                setFavoriteChangeListener(holder, publication);
+            holder.btnDelete.setOnClickListener(v -> {
+                new AlertDialog.Builder(context)
+                        .setTitle(R.string.action_delete)
+                        .setMessage(R.string.delete_friend_message)
+                        .setPositiveButton(R.string.action_delete, (d, w) -> {
+                            if (listener != null) {
+                                int adapterPos = holder.getBindingAdapterPosition();
+                                listener.onDeleteClicked(publication.getId(), adapterPos);
+                            }
+                        })
+                        .setNegativeButton(R.string.action_cancel, null)
+                        .show();
             });
-        });
-    }
 
-    /**
-     * Configura el listener del CheckBox para guardar o borrar un favorito.
-     */
-    private void setFavoriteChangeListener(PublicationViewHolder holder, Publication publication) {
+            holder.btnEdit.setOnClickListener(v -> {
+                if (listener != null) listener.onEditClicked(publication);
+            });
+        } else {
+            holder.btnDelete.setVisibility(View.GONE);
+            holder.btnEdit.setVisibility(View.GONE);
+        }
+
+        holder.cbFavorite.setOnCheckedChangeListener(null);
+        holder.cbFavorite.setChecked(false);
         holder.cbFavorite.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Tarea 2: Guardar o borrar en segundo plano
             AppDatabase.databaseWriteExecutor.execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(context);
+                FavoritePublicationDao dao = db.favoritePublicationDao();
+
                 if (isChecked) {
-                    // Si se marca, lo guardamos
-                    FavoritePublication newFavorite = new FavoritePublication();
-                    newFavorite.setId(publication.getId());
-                    newFavorite.setUserName(publication.getUserName());
-                    newFavorite.setContent(publication.getContent());
-                    newFavorite.setImageUrl(publication.getImageUrl());
-                    db.favoritePublicationDao().insert(newFavorite);
+                    FavoritePublication fav = new FavoritePublication();
+                    fav.setUserName(publication.getUserName());
+                    fav.setContent(publication.getContent());
+                    fav.setImageUrl(publication.getImageUrl());
+                    dao.insert(fav);
                 } else {
-                    // Si se desmarca, lo borramos
-                    FavoritePublication favoriteToDelete = new FavoritePublication();
-                    favoriteToDelete.setId(publication.getId());
-                    db.favoritePublicationDao().delete(favoriteToDelete);
+                    FavoritePublication fake = new FavoritePublication();
+                    fake.setId(publication.getId());
+                    dao.delete(fake);
                 }
             });
         });
@@ -96,21 +131,24 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     @Override
     public int getItemCount() {
-        return publications.size();
+        return publications != null ? publications.size() : 0;
     }
 
-    public static class PublicationViewHolder extends RecyclerView.ViewHolder {
-        public TextView tvAuthor;
-        public TextView tvDescription;
-        public ImageView ivImage;
-        public CheckBox cbFavorite;
+    static class PublicationViewHolder extends RecyclerView.ViewHolder {
+        final TextView tvAuthor;
+        final TextView tvDescription;
+        final ImageView ivImage;
+        final CheckBox cbFavorite;
+        final ImageButton btnDelete, btnEdit;
 
-        public PublicationViewHolder(@NonNull View itemView) {
+        PublicationViewHolder(@NonNull View itemView) {
             super(itemView);
             tvAuthor = itemView.findViewById(R.id.tvPublicationAuthor);
             tvDescription = itemView.findViewById(R.id.tvPublicationDescription);
             ivImage = itemView.findViewById(R.id.ivPublicationImage);
             cbFavorite = itemView.findViewById(R.id.cb_favorite);
+            btnDelete = itemView.findViewById(R.id.btn_delete_publication);
+            btnEdit = itemView.findViewById(R.id.btn_edit_publication);
         }
     }
 }
